@@ -8,7 +8,7 @@ import Data.Maybe
 -- Gets the number of points a piece is worth
 getPieceValue :: Piece -> Int
 getPieceValue piece = case pieceType piece of
-    Pawn -> 1
+    Pawn moved -> 1
     Knight -> 3
     Bishop -> 3
     Rook -> 5
@@ -38,12 +38,12 @@ movePiece (Piece pieceType pieceColor pieceX pieceY) (Movement movementX movemen
     Piece pieceType pieceColor (pieceX + movementX) (pieceY + movementY)
 
 -- Checks if 2 pieces have a capture
-checkCapture :: Piece -> Piece -> Bool
-checkCapture (Piece _ color1 x1 y1) (Piece _ color2 x2 y2) = (x1 == x2) && (y1 == y2) && (color1 /= color2)
+checkEnemyCollision :: Piece -> Piece -> Bool
+checkEnemyCollision (Piece _ color1 x1 y1) (Piece _ color2 x2 y2) = (x1 == x2) && (y1 == y2) && (color1 /= color2)
 
 -- Checks if 2 pieces have an invalid collision
-checkInvalidCollision :: Piece -> Piece -> Bool
-checkInvalidCollision (Piece _ color1 x1 y1) (Piece _ color2 x2 y2) = (x1, y1, color1) == (x2, y2, color2)
+checkFriendCollision :: Piece -> Piece -> Bool
+checkFriendCollision (Piece _ color1 x1 y1) (Piece _ color2 x2 y2) = (x1, y1, color1) == (x2, y2, color2)
 
 -- Replaces the old piece with the piece that just captured it
 captureReplace :: Piece -> [Piece] -> [Piece]
@@ -53,20 +53,30 @@ captureReplace newPiece allOtherPieces =
 -- Repeats a movement until it can collide with a piece or it is off the board and then returns all the possible new positions
 repeatMovement :: Piece -> Movement -> [Piece] -> [[Piece]]
 repeatMovement piece movement allOtherPieces 
-    | not (checkOnBoard newPiece) || any (checkInvalidCollision newPiece) allOtherPieces = []
-    | any (checkCapture newPiece) allOtherPieces = [captureReplace newPiece allOtherPieces]
+    | not (checkOnBoard newPiece) || any (checkFriendCollision newPiece) allOtherPieces = []
+    | any (checkEnemyCollision newPiece) allOtherPieces = [captureReplace newPiece allOtherPieces]
     | otherwise = ([newPiece] ++ allOtherPieces) : repeatMovement newPiece movement allOtherPieces
     where newPiece = movePiece piece movement
+
+singleMovement :: Piece -> [Piece] -> [[Piece]]
+singleMovement newPiece allOtherPieces
+    | not (checkOnBoard newPiece) || any (checkFriendCollision newPiece) allOtherPieces = []
+    | any (checkEnemyCollision newPiece) allOtherPieces = [captureReplace newPiece allOtherPieces]
+    | otherwise = [[newPiece] ++ allOtherPieces]
+
+-- Get all king moves
+getAllKingMoves :: Piece -> [Piece] -> [[Piece]]
+getAllKingMoves piece allOtherPieces = concat $ map (\movement -> singleMovement (movePiece piece movement) allOtherPieces) (singleAxial ++ singleDiagonal)
 
 -- Get all rook moves
 getAllRookMoves :: Piece -> [Piece] -> [[Piece]]
 getAllRookMoves piece allOtherPieces =
-    concat (map (\movement -> repeatMovement piece movement allOtherPieces) [moveUp, moveDown, moveLeft, moveRight])
+    concat $ map (\movement -> repeatMovement piece movement allOtherPieces) singleAxial
 
 -- Get all bishop moves
 getAllBishopMoves :: Piece -> [Piece] -> [[Piece]]
 getAllBishopMoves piece allOtherPieces =
-    concat (map (\movement -> repeatMovement piece movement allOtherPieces) [moveUpRight, moveUpLeft, moveDownRight, moveDownLeft])
+    concat $ map (\movement -> repeatMovement piece movement allOtherPieces) singleDiagonal
 
 -- Get all queen moves
 getAllQueenMoves :: Piece -> [Piece] -> [[Piece]]
@@ -75,33 +85,42 @@ getAllQueenMoves piece allOtherPieces = getAllRookMoves piece allOtherPieces ++ 
 -- Gets all the possible move positions for the first piece in a list
 getAllMovesForPiece :: [Piece] -> [[Piece]]
 getAllMovesForPiece (piece : allOtherPieces) = case pieceType piece of
-    Pawn -> []
-    Knight -> []
+    Pawn moved -> [(piece : allOtherPieces)]
+    Knight -> [(piece : allOtherPieces)]
     Bishop -> getAllBishopMoves piece allOtherPieces
     Rook -> getAllRookMoves piece allOtherPieces
     Queen -> getAllQueenMoves piece allOtherPieces
-    King -> []
+    King -> getAllKingMoves piece allOtherPieces
 
 -- Get all the possible cycles of a list
 getAllCycles :: [a] -> [[a]]
 getAllCycles (x1 : xn) = take (length (x1 : xn)) ((x1 : xn) : getAllCycles (xn ++ [x1]))
-getAllCycles [] = []
 
 -- Get all the possible moves
 getAllMoves :: PieceColor -> [Piece] -> [[Piece]]
 getAllMoves playerColor allPieces = concat $ map (getAllMovesForPiece) (filter (\pieces -> (pieceColor (pieces !! 0)) == playerColor) (getAllCycles allPieces))
 
 -- Gets the worst case scenario evaluation for a list of positions
-getWorstCaseEval ::  PieceColor -> [[Piece]] -> Int
-getWorstCaseEval playerColor allPieces = minimum $ map (getTotalPoints playerColor) allPieces
+getTotalEval ::  PieceColor -> [[Piece]] -> Int
+getTotalEval playerColor allPieces = sum $ map (getTotalPoints playerColor) allPieces
+
+-- Repeats the analysing process iteratively
+repeatAnalysis :: PieceColor -> Int -> [[Piece]] -> [[Piece]]
+repeatAnalysis playerColor count positions 
+    | count == 0 = positions
+    | otherwise = let
+        morePositions = concat $ map (getAllMoves playerColor) positions
+        in repeatAnalysis (getOtherColor playerColor) (count - 1) morePositions
 
 -- Finds the best engine move
--- Currently can only do this at a depth of one
 getEngineMove :: PieceColor -> [Piece] -> Int -> [Piece]
 getEngineMove playerColor allPieces depth = let
     allMoves = getAllMoves playerColor allPieces
-    allEvals = map (getTotalPoints playerColor) allMoves
-    bestMoveIndex = elemIndex (maximum allEvals) allEvals
+    firstAnalysis = map (getAllMoves $ getOtherColor playerColor) allMoves
+    lastAnalysis = map (repeatAnalysis playerColor (depth - 1)) firstAnalysis
+    evals = map (getTotalEval playerColor) lastAnalysis
+    bestMoveIndex = elemIndex (maximum evals) evals
     in case bestMoveIndex of
         Just index -> allMoves !! index
         Nothing -> []
+

@@ -9,7 +9,7 @@ data Piece = Piece {
 } deriving (Show, Eq)
 
 -- This is the type that a piece can be
-data PieceType = Pawn | Knight | Bishop | Rook | Queen | King deriving (Show, Eq)
+data PieceType = Pawn Bool | Knight | Bishop | Rook | Queen | King deriving (Show, Eq)
 
 -- Pieces are either white or black
 data PieceColor = White | Black deriving (Show, Eq)
