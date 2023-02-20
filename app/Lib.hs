@@ -15,6 +15,11 @@ getPieceValue piece = case pieceType piece of
     Queen -> 9
     King -> 40
 
+-- Gets the other color
+getOtherColor -> PieceColor -> PieceColor
+getOtherColor color = case color of
+    White -> Black
+    Black -> White
 
 -- Gets the total number of points a player has
 getTotalPoints :: PieceColor -> [Piece] -> Int
