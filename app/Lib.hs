@@ -16,7 +16,7 @@ getPieceValue piece = case pieceType piece of
     King -> 40
 
 -- Gets the other color
-getOtherColor -> PieceColor -> PieceColor
+getOtherColor :: PieceColor -> PieceColor
 getOtherColor color = case color of
     White -> Black
     Black -> White
@@ -52,11 +52,11 @@ captureReplace newPiece allOtherPieces =
 
 -- Repeats a movement until it can collide with a piece or it is off the board and then returns all the possible new positions
 repeatMovement :: Piece -> Movement -> [Piece] -> [[Piece]]
-repeatMovement piece movement allOtherPieces= let
-    newPiece = movePiece piece movement
-    in if not (checkOnBoard newPiece) || any (checkInvalidCollision newPiece) allOtherPieces then []
-    else if any (checkCapture newPiece) allOtherPieces then [captureReplace newPiece allOtherPieces]
-    else ([newPiece] ++ allOtherPieces) : repeatMovement newPiece movement allOtherPieces
+repeatMovement piece movement allOtherPieces 
+    | not (checkOnBoard newPiece) || any (checkInvalidCollision newPiece) allOtherPieces = []
+    | any (checkCapture newPiece) allOtherPieces = [captureReplace newPiece allOtherPieces]
+    | otherwise = ([newPiece] ++ allOtherPieces) : repeatMovement newPiece movement allOtherPieces
+    where newPiece = movePiece piece movement
 
 -- Get all rook moves
 getAllRookMoves :: Piece -> [Piece] -> [[Piece]]
