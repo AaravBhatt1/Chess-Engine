@@ -2,6 +2,8 @@ module Lib where
 
 import Types
 import Constants
+import Data.List
+import Data.Maybe
 
 -- Gets the number of points a piece is worth
 getPieceValue :: Piece -> Int
@@ -72,5 +74,20 @@ getAllCycles (x1 : xn) = take (length (x1 : xn)) ((x1 : xn) : getAllCycles (xn +
 getAllCycles [] = []
 
 -- Get all the possible moves
-getAllMoves :: [Piece] -> PieceColor -> [[Piece]]
-getAllMoves allPieces playerColor = concat (map (getAllMovesForPiece) (filter (\pieces -> (pieceColor (pieces !! 0)) == playerColor) (getAllCycles allPieces)))
+getAllMoves :: PieceColor -> [Piece] -> [[Piece]]
+getAllMoves playerColor allPieces = concat $ map (getAllMovesForPiece) (filter (\pieces -> (pieceColor (pieces !! 0)) == playerColor) (getAllCycles allPieces))
+
+-- Gets the worst case scenario evaluation for a list of positions
+getWorstCaseEval ::  PieceColor -> [[Piece]] -> Int
+getWorstCaseEval playerColor allPieces = minimum $ map (getTotalPoints playerColor) allPieces
+
+-- Finds the best engine move
+-- Currently can only do this at a depth of one
+getEngineMove :: PieceColor -> [Piece] -> Int -> [Piece]
+getEngineMove playerColor allPieces depth = let
+    allMoves = getAllMoves playerColor allPieces
+    allEvals = map (getTotalPoints playerColor) allMoves
+    bestMoveIndex = elemIndex (maximum allEvals) allEvals
+    in case bestMoveIndex of
+        Just index -> allMoves !! index
+        Nothing -> []
