@@ -57,15 +57,24 @@ repeatMovement piece movement allOtherPieces= let
 getAllRookMoves :: Piece -> [Piece] -> [[Piece]]
 getAllRookMoves piece allOtherPieces =
     concat (map (\movement -> repeatMovement piece movement allOtherPieces) [moveUp, moveDown, moveLeft, moveRight])
+
+-- Get all bishop moves
+getAllBishopMoves :: Piece -> [Piece] -> [[Piece]]
+getAllBishopMoves piece allOtherPieces =
+    concat (map (\movement -> repeatMovement piece movement allOtherPieces) [moveUpRight, moveUpLeft, moveDownRight, moveDownLeft])
+
+-- Get all queen moves
+getAllQueenMoves :: Piece -> [Piece] -> [[Piece]]
+getAllQueenMoves piece allOtherPieces = getAllRookMoves piece allOtherPieces ++ getAllBishopMoves piece allOtherPieces
     
 -- Gets all the possible move positions for the first piece in a list
 getAllMovesForPiece :: [Piece] -> [[Piece]]
 getAllMovesForPiece (piece : allOtherPieces) = case pieceType piece of
     Pawn -> []
     Knight -> []
-    Bishop -> []
+    Bishop -> getAllBishopMoves piece allOtherPieces
     Rook -> getAllRookMoves piece allOtherPieces
-    Queen -> []
+    Queen -> getAllQueenMoves piece allOtherPieces
     King -> []
 
 -- Get all the possible cycles of a list
