@@ -144,12 +144,29 @@ getAllMoves color position = concat $ map (\piece -> if isOwnedBy color piece th
 
 -- Checks if the game is over
 checkGameOver :: ChessPosition -> Bool
-checkGameOver position = (length $ filter (\piece -> pieceType piece == King) position) == 2
+checkGameOver position = (length $ filter (\piece -> pieceType piece == King) position) /= 2
 
 -- Creates a builder function so that we can create a tree of possible moves
 moveTreeBuildNode :: Move -> (Move, Moves)
-moveTreeBuildNode startingMove = if (not $ checkGameOver $ newChessPos startingMove) then (startingMove, getAllMoves (getOtherColor $ playerColor startingMove) (newChessPos startingMove))else (startingMove, [])
+moveTreeBuildNode startingMove 
+    | not $ checkGameOver $ newChessPos startingMove = (startingMove, getAllMoves (getOtherColor $ playerColor startingMove) (newChessPos startingMove))
+    | otherwise = (startingMove, [])
 
 -- Creates a tree of possible moves
 generateMoveTree :: Move -> Tree Move
-generateMoveTree startingMove = generateMoveTree startingMove
+generateMoveTree startingMove = unfoldTree moveTreeBuildNode startingMove
+
+-- This will cut all branches of a tree at a particular depth
+-- I do not like how haskell won't let me just use (Tree rootLabel subForest) here
+cutTree :: Int -> Tree a -> Tree a
+cutTree depth tree
+    | depth == 0 = unfoldTree emptyBranchBuildNode label
+    | otherwise = unfoldTree nonEmptyBranchBuildNode label
+    where
+        label = rootLabel tree
+        branches = subForest tree
+        emptyBranchBuildNode x = (x, [])
+        nonEmptyBranchBuildNode x = (x, map (rootLabel $ cutTree (depth - 1)) branches)
+
+
+-- Eh?
