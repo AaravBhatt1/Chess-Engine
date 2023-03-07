@@ -9,7 +9,7 @@ singleDiagonalMove :: PositionVector
 singleDiagonalMove = PositionVector 1 1
 
 knightMove1 :: PositionVector
-knightMove1 = PositionVector 3 1
+knightMove1 = PositionVector 2 1
 
 knightMove2 :: PositionVector
-knightMove2 = PositionVector 3 (-1)
+knightMove2 = PositionVector 2 (-1)
