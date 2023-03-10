@@ -3,7 +3,6 @@ module Lib where
 import Types
 import Constants
 import Data.List
-import Data.Tree
 
 -- This function returns the number of points a piece is worth
 getPieceValue :: Piece -> Int
@@ -145,3 +144,23 @@ getAllMoves color position = concat $ map (\piece -> if isOwnedBy color piece th
 -- Checks if the game is over
 checkGameOver :: ChessPosition -> Bool
 checkGameOver position = (length $ filter (\piece -> pieceType piece == King) position) /= 2
+
+-- Generates a tree of possible moves from a single move and the color that made that move
+generateMoveTree :: Color -> Move -> Tree Move
+generateMoveTree color move
+    | checkGameOver newPos = Tree move []
+    | otherwise = Tree move newMoveTrees
+    where
+        newPos = newChessPos move
+        otherColor = getOtherColor color
+        newMoveTrees = map (generateMoveTree otherColor) (getAllMoves otherColor newPos)
+
+-- This cuts all branches of a tree after a tree after a set depth
+-- This is so we can deal with the move tree being an infinite tree
+cutTree :: Int -> Tree a -> Tree a
+cutTree depth tree
+    | depth == 0 = Tree move []
+    | otherwise = Tree move cutBranches
+    where
+        move = node tree
+        cutBranches = map (cutTree (depth - 1)) (branches tree)

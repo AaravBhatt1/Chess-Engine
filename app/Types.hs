@@ -42,3 +42,9 @@ type Pieces = [Piece]
 type ChessPosition = [Piece]
 type ChessPositions = [ChessPosition]
 
+-- Time to create a tree data type, a tree has a node and a list of branches that extend from it
+data Tree a = Tree {
+    node :: a,
+    branches :: [Tree a]
+} deriving (Show)
+
