@@ -79,10 +79,10 @@ checkAnyValidCollision :: Piece -> Pieces -> Bool
 checkAnyValidCollision newPiece allOtherPieces = any (checkValidCollision newPiece) allOtherPieces
 
 -- This is a standard move, that a knight or king could make
-standardMove :: Color -> Piece -> Pieces -> PositionVector -> Moves
-standardMove color piece allOtherPieces vector
+standardMove :: Piece -> Pieces -> PositionVector -> Moves
+standardMove piece allOtherPieces vector
     | (checkAnyInvalidCollision newPiece allOtherPieces) || (not $ checkPieceOnBoard newPiece) = []
-    | otherwise = [Move piece newPiece (newPiece : delete newPiece allOtherPieces) color]
+    | otherwise = [Move piece newPiece (newPiece : delete newPiece allOtherPieces)]
     where
         newPiece = changePiecePosition vector piece
 
@@ -92,23 +92,23 @@ prettifyPosition (PositionVector x y) = "abcdefgh" !! x : show (y + 1)
 
 -- This returns the move in a string of how it would be displayed to the user
 prettifyMove :: Move -> String
-prettifyMove (Move oldPiece newPiece newChessPos color) = "Move " ++ prettyType ++ " from " ++ prettyOldPos ++ " to " ++ prettyNewPos
+prettifyMove (Move oldPiece newPiece newChessPos) = "Move " ++ prettyType ++ " from " ++ prettyOldPos ++ " to " ++ prettyNewPos
     where
         prettyType = show $ pieceType oldPiece
         prettyOldPos = prettifyPosition $ position oldPiece
         prettyNewPos = prettifyPosition $ position newPiece
 
 -- Gets all the Knight moves
-getAllKnightMoves :: Color -> Piece -> Pieces -> Moves
-getAllKnightMoves color piece allOtherPieces = concat $ map (standardMove color piece allOtherPieces) (getAllRotations knightMove1 ++ getAllRotations knightMove2)
+getAllKnightMoves :: Piece -> Pieces -> Moves
+getAllKnightMoves piece allOtherPieces = concat $ map (standardMove piece allOtherPieces) (getAllRotations knightMove1 ++ getAllRotations knightMove2)
 
 -- Gets all the King moves
-getAllKingMoves :: Color -> Piece -> Pieces -> Moves
-getAllKingMoves color piece allOtherPieces = concat $ map (standardMove color piece allOtherPieces) (getAllRotations singleRightMove ++ getAllRotations singleDiagonalMove)
+getAllKingMoves :: Piece -> Pieces -> Moves
+getAllKingMoves piece allOtherPieces = concat $ map (standardMove piece allOtherPieces) (getAllRotations singleRightMove ++ getAllRotations singleDiagonalMove)
 
 -- This repeats a move until it collides with a piece or is off the board, think of how a rook or bishop moves
-repeatMove :: Color -> Piece -> Pieces -> PositionVector -> Moves
-repeatMove color piece allOtherPieces vector = map (\newPiece -> Move piece newPiece (newPiece : delete newPiece allOtherPieces) color) possiblePiecePos
+repeatMove :: Piece -> Pieces -> PositionVector -> Moves
+repeatMove piece allOtherPieces vector = map (\newPiece -> Move piece newPiece (newPiece : delete newPiece allOtherPieces)) possiblePiecePos
     where 
         possiblePiecePos = takeWhile  canRepeat $ iterate (changePiecePosition vector) (changePiecePosition vector piece)
         canRepeat newPiece = not ((anyInvalidCollision newPiece) || (pieceNotOnBoard newPiece) || (anyValidcollisionBefore newPiece))
@@ -117,56 +117,31 @@ repeatMove color piece allOtherPieces vector = map (\newPiece -> Move piece newP
         anyValidcollisionBefore newPiece = checkAnyValidCollision (changePiecePosition (inverseVector vector) newPiece) allOtherPieces
 
 -- Gets all the Rook moves
-getAllRookMoves :: Color -> Piece -> Pieces -> Moves
-getAllRookMoves color piece allOtherPieces = concat $ map (repeatMove color piece allOtherPieces) (getAllRotations singleRightMove)
+getAllRookMoves :: Piece -> Pieces -> Moves
+getAllRookMoves piece allOtherPieces = concat $ map (repeatMove piece allOtherPieces) (getAllRotations singleRightMove)
 
 -- Gets all the Bishop moves
-getAllBishopMoves :: Color -> Piece -> Pieces -> Moves
-getAllBishopMoves color piece allOtherPieces = concat $ map (repeatMove color piece allOtherPieces) (getAllRotations singleDiagonalMove)
+getAllBishopMoves :: Piece -> Pieces -> Moves
+getAllBishopMoves piece allOtherPieces = concat $ map (repeatMove piece allOtherPieces) (getAllRotations singleDiagonalMove)
 
 -- Gets all the Queen moves, noting that the Queen moves like a Bishop and Rook combined
-getAllQueenMoves :: Color -> Piece -> Pieces -> Moves
-getAllQueenMoves color piece allOtherPieces = getAllRookMoves color piece allOtherPieces ++ getAllBishopMoves color piece allOtherPieces
+getAllQueenMoves :: Piece -> Pieces -> Moves
+getAllQueenMoves piece allOtherPieces = getAllRookMoves piece allOtherPieces ++ getAllBishopMoves piece allOtherPieces
 
 -- Gets all the moves for a particular piece
-getAllMovesForPiece :: Color -> Piece -> Pieces -> Moves
-getAllMovesForPiece color piece allOtherPieces = case pieceType piece of
+getAllMovesForPiece :: Piece -> Pieces -> Moves
+getAllMovesForPiece piece allOtherPieces = case pieceType piece of
     Pawn _ -> [] -- do this later cos pawns are special
-    Knight -> getAllKnightMoves color piece allOtherPieces
-    Bishop -> getAllBishopMoves color piece allOtherPieces
-    Rook -> getAllRookMoves color piece allOtherPieces
-    Queen -> getAllQueenMoves color piece allOtherPieces
-    King -> getAllKingMoves color piece allOtherPieces
+    Knight -> getAllKnightMoves piece allOtherPieces
+    Bishop -> getAllBishopMoves piece allOtherPieces
+    Rook -> getAllRookMoves piece allOtherPieces
+    Queen -> getAllQueenMoves piece allOtherPieces
+    King -> getAllKingMoves piece allOtherPieces
 
 -- Gets all the moves for a position
 getAllMoves :: Color -> ChessPosition -> Moves
-getAllMoves color position = concat $ map (\piece -> if isOwnedBy color piece then getAllMovesForPiece color piece (delete piece position) else []) position
+getAllMoves color position = concat $ map (\piece -> if isOwnedBy color piece then getAllMovesForPiece piece (delete piece position) else []) position
 
 -- Checks if the game is over
 checkGameOver :: ChessPosition -> Bool
 checkGameOver position = (length $ filter (\piece -> pieceType piece == King) position) /= 2
-
--- Creates a builder function so that we can create a tree of possible moves
-moveTreeBuildNode :: Move -> (Move, Moves)
-moveTreeBuildNode startingMove 
-    | not $ checkGameOver $ newChessPos startingMove = (startingMove, getAllMoves (getOtherColor $ playerColor startingMove) (newChessPos startingMove))
-    | otherwise = (startingMove, [])
-
--- Creates a tree of possible moves
-generateMoveTree :: Move -> Tree Move
-generateMoveTree startingMove = unfoldTree moveTreeBuildNode startingMove
-
--- This will cut all branches of a tree at a particular depth
--- I do not like how haskell won't let me just use (Tree rootLabel subForest) here
-cutTree :: Int -> Tree a -> Tree a
-cutTree depth tree
-    | depth == 0 = unfoldTree emptyBranchBuildNode label
-    | otherwise = unfoldTree nonEmptyBranchBuildNode label
-    where
-        label = rootLabel tree
-        branches = subForest tree
-        emptyBranchBuildNode x = (x, [])
-        nonEmptyBranchBuildNode x = (x, map (rootLabel $ cutTree (depth - 1)) branches)
-
-
--- Eh?

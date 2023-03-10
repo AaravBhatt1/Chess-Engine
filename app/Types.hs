@@ -33,8 +33,7 @@ data Piece = Piece {
 data Move = Move {
     oldPiece :: Piece,
     newPiece :: Piece,
-    newChessPos :: ChessPosition,
-    playerColor :: Color
+    newChessPos :: ChessPosition
 } deriving (Show, Eq)
 
 -- We can call a list of moves, well, moves, and do the same for pieces
