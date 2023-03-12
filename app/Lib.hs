@@ -81,7 +81,7 @@ checkAnyValidCollision newPiece allOtherPieces = any (checkValidCollision newPie
 standardMove :: Piece -> Pieces -> PositionVector -> Moves
 standardMove piece allOtherPieces vector
     | (checkAnyInvalidCollision newPiece allOtherPieces) || (not $ checkPieceOnBoard newPiece) = []
-    | otherwise = [Move piece newPiece (newPiece : delete newPiece allOtherPieces)]
+    | otherwise = [Move piece newPiece (newPiece : deleteWhere (\piece -> position piece == position newPiece) allOtherPieces)]
     where
         newPiece = changePiecePosition vector piece
 
@@ -107,7 +107,7 @@ getAllKingMoves piece allOtherPieces = concat $ map (standardMove piece allOther
 
 -- This repeats a move until it collides with a piece or is off the board, think of how a rook or bishop moves
 repeatMove :: Piece -> Pieces -> PositionVector -> Moves
-repeatMove piece allOtherPieces vector = map (\newPiece -> Move piece newPiece (newPiece : delete newPiece allOtherPieces)) possiblePiecePos
+repeatMove piece allOtherPieces vector = map (\newPiece -> Move piece newPiece (newPiece : deleteWhere (\piece -> position piece == position newPiece) allOtherPieces)) possiblePiecePos
     where 
         possiblePiecePos = takeWhile  canRepeat $ iterate (changePiecePosition vector) (changePiecePosition vector piece)
         canRepeat newPiece = not ((anyInvalidCollision newPiece) || (pieceNotOnBoard newPiece) || (anyValidcollisionBefore newPiece))
@@ -146,14 +146,14 @@ checkGameOver :: ChessPosition -> Bool
 checkGameOver position = (length $ filter (\piece -> pieceType piece == King) position) /= 2
 
 -- Generates a tree of possible moves from a single move and the color that made that move
-generateMoveTree :: Color -> Move -> Tree Move
-generateMoveTree color move
+generateMoveTree :: Move -> Tree Move
+generateMoveTree move
     | checkGameOver newPos = Tree move []
     | otherwise = Tree move newMoveTrees
     where
         newPos = newChessPos move
-        otherColor = getOtherColor color
-        newMoveTrees = map (generateMoveTree otherColor) (getAllMoves otherColor newPos)
+        otherColor = getOtherColor $ getMoveColor move
+        newMoveTrees = map generateMoveTree (getAllMoves otherColor newPos)
 
 -- This cuts all branches of a tree after a tree after a set depth
 -- This is so we can deal with the move tree being an infinite tree
@@ -164,3 +164,40 @@ cutTree depth tree
     where
         move = node tree
         cutBranches = map (cutTree (depth - 1)) (branches tree)
+
+-- Checks if the user input is valid
+getUserMove :: String -> Color -> ChessPosition -> Maybe Move
+getUserMove text color chessPos = case index of
+    Just i -> Just (possibleMoves !! i)
+    Nothing -> Nothing
+    where
+        possibleMoves = getAllMoves color chessPos
+        index = findIndex (== text) $ map prettifyMove possibleMoves
+        
+-- Deletes all the items from a list where a function is true
+deleteWhere :: (a -> Bool) -> [a] -> [a]
+deleteWhere func [] = []
+deleteWhere func (x : xn)
+    | func x = deleteWhere func xn
+    | otherwise = (x : deleteWhere func xn)
+
+-- Gets the color that carried out a move
+getMoveColor :: Move -> Color
+getMoveColor (Move oldPiece newPiece newChessPos) = pieceColor oldPiece
+
+-- Gets the minimum eval for the first level, then maximum for the next, and so on
+-- Note that color here should be the color that made the first move in the tree it was given
+getMoveEval :: Color -> Tree Move -> Int
+getMoveEval playerColor moveTree
+        | null $ branches moveTree = getPlayerEval playerColor (newChessPos $ node moveTree)
+        | (getMoveColor $ node moveTree) == playerColor = minimum $ map (getMoveEval playerColor) (branches moveTree)
+        | (getMoveColor $ node moveTree) == (getOtherColor playerColor) = maximum $ map (getMoveEval playerColor) (branches moveTree)
+
+-- Gets the best move by looking through the move evals and fincing the best one
+getBestMove :: Tree Move -> Move
+getBestMove moveTree = case index of
+    Just i -> node (branches moveTree !! i)
+    where
+        moveColor = getOtherColor $ getMoveColor $ node moveTree
+        moveEvals = map (getMoveEval moveColor) (branches moveTree)
+        index = findIndex (== maximum moveEvals) moveEvals
