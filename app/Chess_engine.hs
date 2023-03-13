@@ -150,8 +150,8 @@ getMoveColor (Move oldPiece newPiece newChessPos) = pieceColor oldPiece
 getMoveEval :: Tree Move -> Int
 getMoveEval moveTree
         | null $ branches moveTree = getTotalPoints $ newChessPos $ node moveTree
-        | (getMoveColor $ node moveTree) == Black = minimum $ map getMoveEval $ branches moveTree
-        | (getMoveColor $ node moveTree) == White = maximum $ map getMoveEval $ branches moveTree
+        | (getMoveColor $ node moveTree) == White = minimum $ map getMoveEval $ branches moveTree
+        | (getMoveColor $ node moveTree) == Black = maximum $ map getMoveEval $ branches moveTree
 
 -- Gets the best move by looking through the move evals and fincing the best one
 getBestMove :: Tree Move -> Move
@@ -159,4 +159,4 @@ getBestMove moveTree = case index of
     Just i -> node (branches moveTree !! i)
     where
         moveEvals = map getMoveEval (branches moveTree)
-        index = findIndex (== minimum moveEvals) moveEvals
+        index = findIndex (== getMoveEval moveTree) moveEvals
