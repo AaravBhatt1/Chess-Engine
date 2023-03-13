@@ -39,7 +39,7 @@ startingBoard = [
     Piece King White (PositionVector 4 0),
     Piece Bishop White (PositionVector 5 0),
     Piece Knight White (PositionVector 6 0),
-    Piece Rook White (PositionVector 6 0),
+    Piece Rook White (PositionVector 7 0),
     Piece Rook Black (PositionVector 0 7),
     Piece Knight Black (PositionVector 1 7),
     Piece Bishop Black (PositionVector 2 7),
