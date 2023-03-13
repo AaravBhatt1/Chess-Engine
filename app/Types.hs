@@ -2,19 +2,16 @@ module Types where
 
 -- Each chess piece has a type, for example a pawn
 -- Some of these store whether or not they have been moved yet because of special moves like castling
-data PieceType = Pawn Bool | Knight | Bishop | Rook | Queen | King deriving (Eq)
-
-instance Show PieceType where
-    show pieceType = case pieceType of
-        Pawn _ -> "Pawn"
-        Knight -> "Knight"
-        Bishop -> "Bishop"
-        Rook -> "Rook"
-        Queen -> "Queen"
-        King -> "King"
+data PieceType = Pawn | Knight | Bishop | Rook | Queen | King deriving (Show, Eq)
 
 -- There are 2 colors that pieces can be, white or black. This also represents the player.
 data Color = White | Black deriving (Show, Eq)
+
+-- Returns the other color
+getOtherColor :: Color -> Color
+getOtherColor color = case color of
+    White -> Black
+    Black -> White
 
 -- Each position is stored as a position vector
 data PositionVector = PositionVector {
@@ -22,12 +19,38 @@ data PositionVector = PositionVector {
     yPos :: Int
 } deriving (Show, Eq)
 
+-- This adds 2 position vectors together
+addPositionVector :: PositionVector -> PositionVector -> PositionVector
+addPositionVector (PositionVector x1 y1) (PositionVector x2 y2) = PositionVector (x1 + x2) (y1 + y2)
+
+-- This rotates a vector 90 degrees anticlockwise
+rotateVector :: PositionVector -> PositionVector
+rotateVector (PositionVector x y) = PositionVector y (-x)
+
+-- This basically rotates a vector 90 degrees 4 times
+getAllRotations :: PositionVector -> [PositionVector]
+getAllRotations vector = take 4 $ iterate rotateVector vector
+
+-- This reverses a vector so that we can get the previous move
+inverseVector :: PositionVector -> PositionVector
+inverseVector (PositionVector x y) = PositionVector (-x) (-y)
+
 -- Each piece has a type, color, and position
 data Piece = Piece {
     pieceType :: PieceType,
     pieceColor :: Color,
     position :: PositionVector
 } deriving (Show, Eq)
+
+-- This function returns the number of points a piece is worth
+getPieceValue :: Piece -> Int
+getPieceValue piece = case pieceType piece of
+    Pawn -> 1
+    Knight -> 3
+    Bishop -> 3
+    Rook -> 5
+    Queen -> 9
+    King -> 40
 
 -- A move consists of a piece's old position, new position, the resultant position, and the color that carried out the move to help display a move
 data Move = Move {
@@ -47,4 +70,14 @@ data Tree a = Tree {
     node :: a,
     branches :: [Tree a]
 } deriving (Show)
+
+-- This cuts all branches of a tree after a tree after a set depth
+-- This is so we can deal with the move tree being an infinite tree
+cutTree :: Int -> Tree a -> Tree a
+cutTree depth tree
+    | depth == 0 = Tree move []
+    | otherwise = Tree move cutBranches
+    where
+        move = node tree
+        cutBranches = map (cutTree (depth - 1)) (branches tree)
 
