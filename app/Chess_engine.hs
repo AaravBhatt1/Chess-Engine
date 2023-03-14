@@ -162,11 +162,11 @@ getPositionEval position = totalPoints + openingWeight + endgameWeight
 
 -- This returns true if at least 11 pieces are on the board, which is what I am counting as the opening
 isOpening :: ChessPosition -> Bool
-isOpening position = length position > 10
+isOpening position = length position > 24
 
 -- This returns true if there is less than 6 pieces on the board
 isEndgame :: ChessPosition -> Bool
-isEndgame position = length position < 6
+isEndgame position = length position < 16
 
 getDistanceFromMiddle :: Piece -> Float
 getDistanceFromMiddle (Piece pieceType color (PositionVector x y)) = sqrt ((3 - fromIntegral x) ** 2 + (3 - fromIntegral y) ** 2)
