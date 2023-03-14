@@ -4,6 +4,7 @@ import Chess_engine
 import Types
 import Constants
 import Data.List
+import Data.Char
 
 -- This is the loop for each turn
 moveLoop :: ChessPosition -> IO ()
@@ -52,6 +53,6 @@ prettifyPosition (PositionVector x y) = "abcdefgh" !! x : show (y + 1)
 prettifyMove :: Move -> String
 prettifyMove (Move oldPiece newPiece newChessPos) = "Move " ++ prettyType ++ " from " ++ prettyOldPos ++ " to " ++ prettyNewPos
     where
-        prettyType = show $ pieceType oldPiece
+        prettyType = map toLower $ show $ pieceType oldPiece
         prettyOldPos = prettifyPosition $ position oldPiece
         prettyNewPos = prettifyPosition $ position newPiece

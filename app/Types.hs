@@ -43,14 +43,18 @@ data Piece = Piece {
 } deriving (Show, Eq)
 
 -- This function returns the number of points a piece is worth
-getPieceValue :: Piece -> Int
+getPieceValue :: Piece -> Float
 getPieceValue piece = case pieceType piece of
     Pawn -> 1
     Knight -> 3
-    Bishop -> 3
+    Bishop -> 3.5
     Rook -> 5
     Queen -> 9
     King -> 40
+
+-- Returns true if a piece is owned by a player otherwise returns false
+isOwnedBy :: Color -> Piece -> Bool
+isOwnedBy playerColor piece = playerColor == pieceColor piece
 
 -- A move consists of a piece's old position, new position, the resultant position, and the color that carried out the move to help display a move
 data Move = Move {
@@ -58,6 +62,10 @@ data Move = Move {
     newPiece :: Piece,
     newChessPos :: ChessPosition
 } deriving (Show, Eq)
+
+-- Gets the color that carried out a move
+getMoveColor :: Move -> Color
+getMoveColor (Move oldPiece newPiece newChessPos) = pieceColor oldPiece
 
 -- We can call a list of moves, well, moves, and do the same for pieces
 type Moves = [Move]

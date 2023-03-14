@@ -4,12 +4,8 @@ import Types
 import Constants
 import Data.List
 
--- Returns true if a piece is owned by a player otherwise returns false
-isOwnedBy :: Color -> Piece -> Bool
-isOwnedBy playerColor piece = playerColor == pieceColor piece
-
 -- This function returns the total number of points a white has
-getTotalPoints :: ChessPosition -> Int
+getTotalPoints :: ChessPosition -> Float
 getTotalPoints allPieces = totalWhitePoints - totalBlackPoints
     where
         totalWhitePoints = sum $ map (getPieceValue) $ filter (isOwnedBy White) allPieces 
@@ -89,7 +85,7 @@ getAllPawnMoves piece allOtherPieces = case pieceColor piece of
 getAllWhitePawnMoves :: Piece -> Pieces -> Moves
 getAllWhitePawnMoves piece allOtherPieces = map (\newPiece -> Move piece newPiece (newPiece : deleteWhere (\piece -> position piece == position newPiece) allOtherPieces)) (regularMove ++ captureMove1 ++ captureMove2)
     where
-        regularNewPiece = changePiecePosition (PositionVector 0 1) piece
+        regularNewPiece = if (yPos $ position piece) == 6 then Piece Queen White (PositionVector (xPos $ position piece) 7) else changePiecePosition (PositionVector 0 1) piece
         captureNewPiece1 = changePiecePosition (PositionVector (-1) 1) piece
         captureNewPiece2 = changePiecePosition (PositionVector 1 1) piece
         regularMove = if (checkAnyInvalidCollision regularNewPiece allOtherPieces) || (checkAnyValidCollision regularNewPiece allOtherPieces) then [] else [regularNewPiece]
@@ -100,7 +96,7 @@ getAllWhitePawnMoves piece allOtherPieces = map (\newPiece -> Move piece newPiec
 getAllBlackPawnMoves :: Piece -> Pieces -> Moves
 getAllBlackPawnMoves piece allOtherPieces = map (\newPiece -> Move piece newPiece (newPiece : deleteWhere (\piece -> position piece == position newPiece) allOtherPieces)) (regularMove ++ captureMove1 ++ captureMove2)
     where
-        regularNewPiece = changePiecePosition (PositionVector 0 (-1)) piece
+        regularNewPiece = if (yPos $ position piece) == 1 then Piece Queen Black (PositionVector (xPos $ position piece) 1) else changePiecePosition (PositionVector 0 (-1)) piece
         captureNewPiece1 = changePiecePosition (PositionVector (-1) (-1)) piece
         captureNewPiece2 = changePiecePosition (PositionVector 1 (-1)) piece
         regularMove = if (checkAnyInvalidCollision regularNewPiece allOtherPieces) || (checkAnyValidCollision regularNewPiece allOtherPieces) then [] else [regularNewPiece]
@@ -142,14 +138,10 @@ deleteWhere func (x : xn)
     | func x = deleteWhere func xn
     | otherwise = (x : deleteWhere func xn)
 
--- Gets the color that carried out a move
-getMoveColor :: Move -> Color
-getMoveColor (Move oldPiece newPiece newChessPos) = pieceColor oldPiece
-
 -- Gets the minimum eval for the first level, then maximum for the next, and so on
-getMoveEval :: Tree Move -> Int
+getMoveEval :: Tree Move -> Float
 getMoveEval moveTree
-        | null $ branches moveTree = getTotalPoints $ newChessPos $ node moveTree
+        | null $ branches moveTree = getPositionEval $ newChessPos $ node moveTree
         | (getMoveColor $ node moveTree) == White = minimum $ map getMoveEval $ branches moveTree
         | (getMoveColor $ node moveTree) == Black = maximum $ map getMoveEval $ branches moveTree
 
@@ -160,3 +152,21 @@ getBestMove moveTree = case index of
     where
         moveEvals = map getMoveEval (branches moveTree)
         index = findIndex (== getMoveEval moveTree) moveEvals
+
+getPositionEval :: ChessPosition -> Float
+getPositionEval position = totalPoints + openingWeight + endgameWeight
+    where
+        totalPoints = getTotalPoints position
+        openingWeight = if isOpening position then 0.1 * ((sum $ map getDistanceFromMiddle $ filter (isOwnedBy Black) position) - (sum $ map getDistanceFromMiddle $ filter (isOwnedBy White) position)) else 0
+        endgameWeight = if isEndgame position then 0.2 * ((getDistanceFromMiddle ((filter (\piece -> isOwnedBy White piece && pieceType piece == King) position) !! 0)) - (getDistanceFromMiddle ((filter (\piece -> isOwnedBy Black piece && pieceType piece == King) position) !! 0))) else 0
+
+-- This returns true if at least 11 pieces are on the board, which is what I am counting as the opening
+isOpening :: ChessPosition -> Bool
+isOpening position = length position > 10
+
+-- This returns true if there is less than 6 pieces on the board
+isEndgame :: ChessPosition -> Bool
+isEndgame position = length position < 6
+
+getDistanceFromMiddle :: Piece -> Float
+getDistanceFromMiddle (Piece pieceType color (PositionVector x y)) = sqrt ((3 - fromIntegral x) ** 2 + (3 - fromIntegral y) ** 2)
