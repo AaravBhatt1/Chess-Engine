@@ -10,12 +10,13 @@ import Data.Char
 moveLoop :: ChessPosition -> IO ()
 moveLoop position = do
     userMove <- getUserMove White position
-    if checkGameOver (newChessPos userMove)
+    let chessPos = newChessPos userMove
+    if checkGameOver (chessPos)
         then do
             putStrLn "You won, congragulations!"
             return ()
         else do
-            let moveTree = cutTree 4 $ generateMoveTree userMove
+            let moveTree = if (isEndgame Black chessPos && isEndgame White chessPos) then cutTree 6 $ generateMoveTree userMove else cutTree 4 $ generateMoveTree userMove
             let engineMove = getBestMove moveTree
             putStrLn "Engine move: "
             putStrLn $ prettifyMove engineMove

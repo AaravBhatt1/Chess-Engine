@@ -96,7 +96,7 @@ getAllWhitePawnMoves piece allOtherPieces = map (\newPiece -> Move piece newPiec
 getAllBlackPawnMoves :: Piece -> Pieces -> Moves
 getAllBlackPawnMoves piece allOtherPieces = map (\newPiece -> Move piece newPiece (newPiece : deleteWhere (\piece -> position piece == position newPiece) allOtherPieces)) (regularMove ++ captureMove1 ++ captureMove2)
     where
-        regularNewPiece = if (yPos $ position piece) == 1 then Piece Queen Black (PositionVector (xPos $ position piece) 1) else changePiecePosition (PositionVector 0 (-1)) piece
+        regularNewPiece = if (yPos $ position piece) == 1 then Piece Queen Black (PositionVector (xPos $ position piece) 0) else changePiecePosition (PositionVector 0 (-1)) piece
         captureNewPiece1 = changePiecePosition (PositionVector (-1) (-1)) piece
         captureNewPiece2 = changePiecePosition (PositionVector 1 (-1)) piece
         regularMove = if (checkAnyInvalidCollision regularNewPiece allOtherPieces) || (checkAnyValidCollision regularNewPiece allOtherPieces) then [] else [regularNewPiece]
@@ -154,19 +154,23 @@ getBestMove moveTree = case index of
         index = findIndex (== getMoveEval moveTree) moveEvals
 
 getPositionEval :: ChessPosition -> Float
-getPositionEval position = totalPoints + openingWeight + endgameWeight
+getPositionEval chessPosition = totalPoints + openingWeightWhite - openingWeightBlack + endgameKingWeightWhite - endgameKingWeightBlack + endgamePawnWeightWhite - endgamePawnWeightBlack
     where
-        totalPoints = getTotalPoints position
-        openingWeight = if isOpening position then 0.1 * ((sum $ map getDistanceFromMiddle $ filter (isOwnedBy Black) position) - (sum $ map getDistanceFromMiddle $ filter (isOwnedBy White) position)) else 0
-        endgameWeight = if isEndgame position then 0.2 * ((getDistanceFromMiddle ((filter (\piece -> isOwnedBy White piece && pieceType piece == King) position) !! 0)) - (getDistanceFromMiddle ((filter (\piece -> isOwnedBy Black piece && pieceType piece == King) position) !! 0))) else 0
+        totalPoints = getTotalPoints chessPosition
+        openingWeightWhite = if isOpening White chessPosition then 0.1 * (sum $ map getDistanceFromMiddle $ filter (isOwnedBy Black) chessPosition) else 0
+        openingWeightBlack = if isOpening Black chessPosition then 0.1 * (sum $ map getDistanceFromMiddle $ filter (isOwnedBy White) chessPosition) else 0
+        endgameKingWeightWhite = if (isEndgame White chessPosition) && (totalPoints > 0) && (not $ checkGameOver chessPosition) then 0.1 * (getDistanceFromMiddle (filter (\piece -> isOwnedBy Black piece && pieceType piece == King) chessPosition !! 0)) else 0
+        endgameKingWeightBlack = if (isEndgame Black chessPosition) && (totalPoints < 0) && (not $ checkGameOver chessPosition) then 0.1 * (getDistanceFromMiddle (filter (\piece -> isOwnedBy White piece && pieceType piece == King) chessPosition !! 0)) else 0
+        endgamePawnWeightWhite = if isEndgame White chessPosition then 0.2 * (sum $ map (\pawn -> fromIntegral $ yPos $ position pawn) $ filter (\piece -> isOwnedBy White piece && pieceType piece == Pawn) chessPosition) else 0
+        endgamePawnWeightBlack = if isEndgame White chessPosition then 0.2 * (sum $ map (\pawn -> 8 - (fromIntegral $ yPos $ position pawn)) $ filter (\piece -> isOwnedBy Black piece && pieceType piece == Pawn) chessPosition) else 0
 
 -- This returns true if at least 11 pieces are on the board, which is what I am counting as the opening
-isOpening :: ChessPosition -> Bool
-isOpening position = length position > 24
+isOpening :: Color -> ChessPosition -> Bool
+isOpening color position = (length $ filter (isOwnedBy color) position) > 13
 
 -- This returns true if there is less than 6 pieces on the board
-isEndgame :: ChessPosition -> Bool
-isEndgame position = length position < 16
+isEndgame :: Color -> ChessPosition -> Bool
+isEndgame color position = (length $ filter (isOwnedBy (getOtherColor color)) position) < 6
 
 getDistanceFromMiddle :: Piece -> Float
-getDistanceFromMiddle (Piece pieceType color (PositionVector x y)) = sqrt ((3 - fromIntegral x) ** 2 + (3 - fromIntegral y) ** 2)
+getDistanceFromMiddle (Piece pieceType color (PositionVector x y)) = sqrt ((3.5 - fromIntegral x) ** 2 + (3.5 - fromIntegral y) ** 2)
