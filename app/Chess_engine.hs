@@ -2,124 +2,8 @@ module Chess_engine where
 
 import Types
 import Constants
+import Chess_rules
 import Data.List
-
--- This function returns the total number of points a white has
-getTotalPoints :: ChessPosition -> Float
-getTotalPoints allPieces = totalWhitePoints - totalBlackPoints
-    where
-        totalWhitePoints = sum $ map (getPieceValue) $ filter (isOwnedBy White) allPieces 
-        totalBlackPoints = sum $ map (getPieceValue) $ filter (isOwnedBy Black) allPieces
-
--- Check if a collision is invalid, meaning that a piece is colliding with a piece of its own color
-checkInvalidCollision :: Piece -> Piece -> Bool
-checkInvalidCollision newPiece piece = (pieceColor newPiece == pieceColor piece) && (position newPiece == position piece)
-
--- Check if a collision is valid, meaning that a piece is capturing a piece of the other color
-checkValidCollision :: Piece -> Piece -> Bool
-checkValidCollision newPiece piece = (pieceColor newPiece /= pieceColor piece) && (position newPiece == position piece)
-
--- Checks if a position vector is on the board or not
-checkPositionVectorOnBoard :: PositionVector -> Bool
-checkPositionVectorOnBoard (PositionVector x y) = (x >= 0) && (x <= 7) && (y >= 0) && (y <= 7)
-
--- Checks if the piece is on the board or not
-checkPieceOnBoard :: Piece -> Bool
-checkPieceOnBoard piece = checkPositionVectorOnBoard $ position piece
-
--- Carries out a movement
-changePiecePosition :: PositionVector -> Piece -> Piece
-changePiecePosition vector (Piece pieceType color position) = Piece pieceType color (addPositionVector position vector)
-
--- Checks for any invalid collisions for a piece with a list of pieces
-checkAnyInvalidCollision :: Piece -> Pieces -> Bool
-checkAnyInvalidCollision newPiece allOtherPieces = any (checkInvalidCollision newPiece) allOtherPieces
-
--- Checks for any valid collisions for a piece with a list of pieces
-checkAnyValidCollision :: Piece -> Pieces -> Bool
-checkAnyValidCollision newPiece allOtherPieces = any (checkValidCollision newPiece) allOtherPieces
-
--- This is a standard move, that a knight or king could make
-standardMove :: Piece -> Pieces -> PositionVector -> Moves
-standardMove piece allOtherPieces vector
-    | (checkAnyInvalidCollision newPiece allOtherPieces) || (not $ checkPieceOnBoard newPiece) = []
-    | otherwise = [Move piece newPiece (newPiece : deleteWhere (\piece -> position piece == position newPiece) allOtherPieces)]
-    where
-        newPiece = changePiecePosition vector piece
-
--- Gets all the Knight moves
-getAllKnightMoves :: Piece -> Pieces -> Moves
-getAllKnightMoves piece allOtherPieces = concat $ map (standardMove piece allOtherPieces) (getAllRotations knightMove1 ++ getAllRotations knightMove2)
-
--- Gets all the King moves
-getAllKingMoves :: Piece -> Pieces -> Moves
-getAllKingMoves piece allOtherPieces = concat $ map (standardMove piece allOtherPieces) (getAllRotations singleRightMove ++ getAllRotations singleDiagonalMove)
-
--- This repeats a move until it collides with a piece or is off the board, think of how a rook or bishop moves
-repeatMove :: Piece -> Pieces -> PositionVector -> Moves
-repeatMove piece allOtherPieces vector = map (\newPiece -> Move piece newPiece (newPiece : deleteWhere (\piece -> position piece == position newPiece) allOtherPieces)) possiblePiecePos
-    where 
-        possiblePiecePos = takeWhile  canRepeat $ iterate (changePiecePosition vector) (changePiecePosition vector piece)
-        canRepeat newPiece = not ((anyInvalidCollision newPiece) || (pieceNotOnBoard newPiece) || (anyValidcollisionBefore newPiece))
-        anyInvalidCollision newPiece = checkAnyInvalidCollision newPiece allOtherPieces
-        pieceNotOnBoard newPiece = not $ checkPieceOnBoard newPiece
-        anyValidcollisionBefore newPiece = checkAnyValidCollision (changePiecePosition (inverseVector vector) newPiece) allOtherPieces
-
--- Gets all the Rook moves
-getAllRookMoves :: Piece -> Pieces -> Moves
-getAllRookMoves piece allOtherPieces = concat $ map (repeatMove piece allOtherPieces) (getAllRotations singleRightMove)
-
--- Gets all the Bishop moves
-getAllBishopMoves :: Piece -> Pieces -> Moves
-getAllBishopMoves piece allOtherPieces = concat $ map (repeatMove piece allOtherPieces) (getAllRotations singleDiagonalMove)
-
--- Gets all the Queen moves, noting that the Queen moves like a Bishop and Rook combined
-getAllQueenMoves :: Piece -> Pieces -> Moves
-getAllQueenMoves piece allOtherPieces = getAllRookMoves piece allOtherPieces ++ getAllBishopMoves piece allOtherPieces
-
-getAllPawnMoves :: Piece -> Pieces -> Moves
-getAllPawnMoves piece allOtherPieces = case pieceColor piece of
-    White -> getAllWhitePawnMoves piece allOtherPieces
-    Black -> getAllBlackPawnMoves piece allOtherPieces
-
-getAllWhitePawnMoves :: Piece -> Pieces -> Moves
-getAllWhitePawnMoves piece allOtherPieces = map (\newPiece -> Move piece newPiece (newPiece : deleteWhere (\piece -> position piece == position newPiece) allOtherPieces)) (regularMove ++ captureMove1 ++ captureMove2)
-    where
-        regularNewPiece = if (yPos $ position piece) == 6 then Piece Queen White (PositionVector (xPos $ position piece) 7) else changePiecePosition (PositionVector 0 1) piece
-        captureNewPiece1 = changePiecePosition (PositionVector (-1) 1) piece
-        captureNewPiece2 = changePiecePosition (PositionVector 1 1) piece
-        regularMove = if (checkAnyInvalidCollision regularNewPiece allOtherPieces) || (checkAnyValidCollision regularNewPiece allOtherPieces) then [] else [regularNewPiece]
-        captureMove1 = if (checkAnyValidCollision captureNewPiece1 allOtherPieces) then [captureNewPiece1] else []
-        captureMove2 = if (checkAnyValidCollision captureNewPiece2 allOtherPieces) then [captureNewPiece2] else []
-
-
-getAllBlackPawnMoves :: Piece -> Pieces -> Moves
-getAllBlackPawnMoves piece allOtherPieces = map (\newPiece -> Move piece newPiece (newPiece : deleteWhere (\piece -> position piece == position newPiece) allOtherPieces)) (regularMove ++ captureMove1 ++ captureMove2)
-    where
-        regularNewPiece = if (yPos $ position piece) == 1 then Piece Queen Black (PositionVector (xPos $ position piece) 0) else changePiecePosition (PositionVector 0 (-1)) piece
-        captureNewPiece1 = changePiecePosition (PositionVector (-1) (-1)) piece
-        captureNewPiece2 = changePiecePosition (PositionVector 1 (-1)) piece
-        regularMove = if (checkAnyInvalidCollision regularNewPiece allOtherPieces) || (checkAnyValidCollision regularNewPiece allOtherPieces) then [] else [regularNewPiece]
-        captureMove1 = if (checkAnyValidCollision captureNewPiece1 allOtherPieces) then [captureNewPiece1] else []
-        captureMove2 = if (checkAnyValidCollision captureNewPiece2 allOtherPieces) then [captureNewPiece2] else []
-
--- Gets all the moves for a particular piece
-getAllMovesForPiece :: Piece -> Pieces -> Moves
-getAllMovesForPiece piece allOtherPieces = case pieceType piece of
-    Pawn -> getAllPawnMoves piece allOtherPieces
-    Knight -> getAllKnightMoves piece allOtherPieces
-    Bishop -> getAllBishopMoves piece allOtherPieces
-    Rook -> getAllRookMoves piece allOtherPieces
-    Queen -> getAllQueenMoves piece allOtherPieces
-    King -> getAllKingMoves piece allOtherPieces
-
--- Gets all the moves for a position
-getAllMoves :: Color -> ChessPosition -> Moves
-getAllMoves color position = concat $ map (\piece -> if isOwnedBy color piece then getAllMovesForPiece piece (delete piece position) else []) position
-
--- Checks if the game is over
-checkGameOver :: ChessPosition -> Bool
-checkGameOver position = (length $ filter (\piece -> pieceType piece == King) position) /= 2
 
 -- Generates a tree of possible moves from a single move and the color that made that move
 generateMoveTree :: Move -> Tree Move
@@ -130,22 +14,15 @@ generateMoveTree move
         newPos = newChessPos move
         otherColor = getOtherColor $ getMoveColor move
         newMoveTrees = map generateMoveTree (getAllMoves otherColor newPos)
-        
--- Deletes all the items from a list where a function is true
-deleteWhere :: (a -> Bool) -> [a] -> [a]
-deleteWhere func [] = []
-deleteWhere func (x : xn)
-    | func x = deleteWhere func xn
-    | otherwise = (x : deleteWhere func xn)
 
--- Gets the minimum eval for the first level, then maximum for the next, and so on
+-- Gets the evaluation for the scenario where each player makes the best possible move, working backwards
 getMoveEval :: Tree Move -> Float
 getMoveEval moveTree
         | null $ branches moveTree = getPositionEval $ newChessPos $ node moveTree
         | (getMoveColor $ node moveTree) == White = minimum $ map getMoveEval $ branches moveTree
         | (getMoveColor $ node moveTree) == Black = maximum $ map getMoveEval $ branches moveTree
 
--- Gets the best move by looking through the move evals and fincing the best one
+-- Gets the best move by looking through the move evaluations and fincing the best one
 getBestMove :: Tree Move -> Move
 getBestMove moveTree = case index of
     Just i -> node (branches moveTree !! i)
@@ -153,6 +30,10 @@ getBestMove moveTree = case index of
         moveEvals = map getMoveEval (branches moveTree)
         index = findIndex (== getMoveEval moveTree) moveEvals
 
+-- Gets the engine evaluation of a position
+-- It is mainly based on the number of points each player has
+-- In the opening stage of the game, it favours positions where pieces are active near the centre of the board to avoid it moving the "a" pawn
+-- In the endgame stage of the game, it favours pushing pawns to the end of the board and forcing the opponent's king to the corner
 getPositionEval :: ChessPosition -> Float
 getPositionEval chessPosition = totalPoints + openingWeightWhite - openingWeightBlack + endgameKingWeightWhite - endgameKingWeightBlack + endgamePawnWeightWhite - endgamePawnWeightBlack
     where
@@ -161,16 +42,25 @@ getPositionEval chessPosition = totalPoints + openingWeightWhite - openingWeight
         openingWeightBlack = if isOpening Black chessPosition then 0.1 * (sum $ map getDistanceFromMiddle $ filter (isOwnedBy White) chessPosition) else 0
         endgameKingWeightWhite = if (isEndgame White chessPosition) && (totalPoints > 0) && (not $ checkGameOver chessPosition) then 0.1 * (getDistanceFromMiddle (filter (\piece -> isOwnedBy Black piece && pieceType piece == King) chessPosition !! 0)) else 0
         endgameKingWeightBlack = if (isEndgame Black chessPosition) && (totalPoints < 0) && (not $ checkGameOver chessPosition) then 0.1 * (getDistanceFromMiddle (filter (\piece -> isOwnedBy White piece && pieceType piece == King) chessPosition !! 0)) else 0
-        endgamePawnWeightWhite = if isEndgame White chessPosition then 0.2 * (sum $ map (\pawn -> fromIntegral $ yPos $ position pawn) $ filter (\piece -> isOwnedBy White piece && pieceType piece == Pawn) chessPosition) else 0
-        endgamePawnWeightBlack = if isEndgame White chessPosition then 0.2 * (sum $ map (\pawn -> 8 - (fromIntegral $ yPos $ position pawn)) $ filter (\piece -> isOwnedBy Black piece && pieceType piece == Pawn) chessPosition) else 0
+        endgamePawnWeightWhite = if isEndgame White chessPosition then 0.2 * (sum $ map (\pawn -> fromIntegral $ yPos $ piecePosition pawn) $ filter (\piece -> isOwnedBy White piece && pieceType piece == Pawn) chessPosition) else 0
+        endgamePawnWeightBlack = if isEndgame White chessPosition then 0.2 * (sum $ map (\pawn -> 8 - (fromIntegral $ yPos $ piecePosition pawn)) $ filter (\piece -> isOwnedBy Black piece && pieceType piece == Pawn) chessPosition) else 0
+
+-- This function returns the total number of points a white has, which can be negative if black is winning
+-- This helps us to judge who is winning in a position
+getTotalPoints :: ChessPosition -> Float
+getTotalPoints allPieces = totalWhitePoints - totalBlackPoints
+    where
+        totalWhitePoints = sum $ map (getPieceValue) $ filter (isOwnedBy White) allPieces 
+        totalBlackPoints = sum $ map (getPieceValue) $ filter (isOwnedBy Black) allPieces
 
 -- This returns true if at least 11 pieces are on the board, which is what I am counting as the opening
 isOpening :: Color -> ChessPosition -> Bool
-isOpening color position = (length $ filter (isOwnedBy color) position) > 13
+isOpening playerColor chessPosition = (length $ filter (isOwnedBy playerColor) chessPosition) > 13
 
 -- This returns true if there is less than 6 pieces on the board
 isEndgame :: Color -> ChessPosition -> Bool
-isEndgame color position = (length $ filter (isOwnedBy (getOtherColor color)) position) < 6
+isEndgame playerColor chessPosition = (length $ filter (isOwnedBy (getOtherColor playerColor)) chessPosition) < 6
 
+-- This gets the distance of a piece from the middle of the board
 getDistanceFromMiddle :: Piece -> Float
-getDistanceFromMiddle (Piece pieceType color (PositionVector x y)) = sqrt ((3.5 - fromIntegral x) ** 2 + (3.5 - fromIntegral y) ** 2)
+getDistanceFromMiddle (Piece pieceType pieceColor (Vector x y)) = sqrt ((3.5 - fromIntegral x) ** 2 + (3.5 - fromIntegral y) ** 2)

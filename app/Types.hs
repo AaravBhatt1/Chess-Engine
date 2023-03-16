@@ -14,32 +14,32 @@ getOtherColor color = case color of
     Black -> White
 
 -- Each position is stored as a position vector
-data PositionVector = PositionVector {
+data Vector = Vector {
     xPos :: Int,
     yPos :: Int
 } deriving (Show, Eq)
 
 -- This adds 2 position vectors together
-addPositionVector :: PositionVector -> PositionVector -> PositionVector
-addPositionVector (PositionVector x1 y1) (PositionVector x2 y2) = PositionVector (x1 + x2) (y1 + y2)
+addPositionVector :: Vector -> Vector -> Vector
+addPositionVector (Vector x1 y1) (Vector x2 y2) = Vector (x1 + x2) (y1 + y2)
 
 -- This rotates a vector 90 degrees anticlockwise
-rotateVector :: PositionVector -> PositionVector
-rotateVector (PositionVector x y) = PositionVector y (-x)
+rotateVector :: Vector -> Vector
+rotateVector (Vector x y) = Vector y (-x)
 
 -- This basically rotates a vector 90 degrees 4 times
-getAllRotations :: PositionVector -> [PositionVector]
+getAllRotations :: Vector -> [Vector]
 getAllRotations vector = take 4 $ iterate rotateVector vector
 
 -- This reverses a vector so that we can get the previous move
-inverseVector :: PositionVector -> PositionVector
-inverseVector (PositionVector x y) = PositionVector (-x) (-y)
+inverseVector :: Vector -> Vector
+inverseVector (Vector x y) = Vector (-x) (-y)
 
 -- Each piece has a type, color, and position
 data Piece = Piece {
     pieceType :: PieceType,
     pieceColor :: Color,
-    position :: PositionVector
+    piecePosition :: Vector
 } deriving (Show, Eq)
 
 -- This function returns the number of points a piece is worth

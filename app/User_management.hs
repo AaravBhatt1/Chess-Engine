@@ -1,15 +1,15 @@
 module User_management where
 
 import Chess_engine
+import Chess_rules
 import Types
-import Constants
 import Data.List
 import Data.Char
 
 -- This is the loop for each turn
 moveLoop :: ChessPosition -> IO ()
-moveLoop position = do
-    userMove <- getUserMove White position
+moveLoop chessPosition = do
+    userMove <- getUserMove White chessPosition
     let chessPos = newChessPos userMove
     if checkGameOver (chessPos)
         then do
@@ -37,23 +37,23 @@ checkUserInput text color chessPos = case index of
 
 -- Asks for the user to type their move until they type in a valid move and then returns their move
 getUserMove :: Color -> ChessPosition -> IO Move
-getUserMove color position = do
+getUserMove color chessPosition = do
     putStrLn "Enter a valid move: "
     userMove <- getLine
-    case checkUserInput userMove color position of
+    case checkUserInput userMove color chessPosition of
         Just move -> return (move)
         Nothing -> do 
             putStrLn "Invalid move"
-            getUserMove color position
+            getUserMove color chessPosition
 
 -- This returns the position as a string as the coordinates of the board in chess notation
-prettifyPosition :: PositionVector -> String
-prettifyPosition (PositionVector x y) = "abcdefgh" !! x : show (y + 1)
+prettifyPosition :: Vector -> String
+prettifyPosition (Vector x y) = "abcdefgh" !! x : show (y + 1)
 
 -- This returns the move in a string of how it would be displayed to the user
 prettifyMove :: Move -> String
 prettifyMove (Move oldPiece newPiece newChessPos) = "Move " ++ prettyType ++ " from " ++ prettyOldPos ++ " to " ++ prettyNewPos
     where
         prettyType = map toLower $ show $ pieceType oldPiece
-        prettyOldPos = prettifyPosition $ position oldPiece
-        prettyNewPos = prettifyPosition $ position newPiece
+        prettyOldPos = prettifyPosition $ piecePosition oldPiece
+        prettyNewPos = prettifyPosition $ piecePosition newPiece
