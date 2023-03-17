@@ -28,7 +28,7 @@ getBestMove moveTree = case index of
     Just i -> node (branches moveTree !! i)
     where
         moveEvals = map getMoveEval (branches moveTree)
-        index = findIndex (== getMoveEval moveTree) moveEvals
+        index = findIndex (== getMoveEval moveTree - 0.01) moveEvals
 
 -- Gets the engine evaluation of a position
 -- It is mainly based on the number of points each player has

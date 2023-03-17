@@ -4,12 +4,12 @@ import Constants
 import Types
 import Data.List
 
--- Replaces the first item from a list where a function is true with another item
-replaceWhere :: a -> (a -> Bool) -> [a] -> [a]
-replaceWhere item func [] = []
-replaceWhere item func (x : xn)
-    | func x = (item : xn)
-    | otherwise = (x : replaceWhere item func xn)
+-- Deletes all the items where a function is true in a list
+deleteWhere :: (a -> Bool) -> [a] -> [a]
+deleteWhere func [] = []
+deleteWhere func (x : xn)
+    | func x = deleteWhere func xn
+    | otherwise = x : deleteWhere func xn
 
 -- Checks if a collision is invalid, meaning that a piece is colliding with a piece of its own color
 checkInvalidCollision :: Piece -> Piece -> Bool
@@ -39,7 +39,7 @@ changePiecePosition vector (Piece pieceType pieceColor piecePosition) = Piece pi
 standardMove :: Piece -> Pieces -> Vector -> Moves
 standardMove piece allOtherPieces vector
     | (checkAnyInvalidCollision newPiece allOtherPieces) || (not $ checkPieceOnBoard newPiece) = []
-    | otherwise = [Move piece newPiece (replaceWhere newPiece (\piece -> piecePosition piece == piecePosition newPiece) allOtherPieces)]
+    | otherwise = [Move piece newPiece (newPiece : deleteWhere (checkValidCollision newPiece) allOtherPieces)]
     where
         newPiece = changePiecePosition vector piece
 
@@ -53,7 +53,7 @@ getAllKingMoves piece allOtherPieces = concat $ map (standardMove piece allOther
 
 -- This repeats a move until it collides with a piece or is off the board, think of how a rook or bishop moves
 repeatMove :: Piece -> Pieces -> Vector -> Moves
-repeatMove piece allOtherPieces vector = map (\newPiece -> Move piece newPiece (replaceWhere newPiece (\piece -> piecePosition piece == piecePosition newPiece) allOtherPieces)) possiblePiecePos
+repeatMove piece allOtherPieces vector = map (\newPiece -> Move piece newPiece (newPiece : deleteWhere (checkValidCollision newPiece) allOtherPieces)) possiblePiecePos
     where 
         possiblePiecePos = takeWhile  canRepeat $ iterate (changePiecePosition vector) (changePiecePosition vector piece)
         canRepeat newPiece = not ((anyInvalidCollision newPiece) || (pieceNotOnBoard newPiece) || (anyValidcollisionBefore newPiece))
@@ -81,7 +81,7 @@ getAllPawnMoves piece allOtherPieces = case pieceColor piece of
 
 -- Gets all the white pawn moves
 getAllWhitePawnMoves :: Piece -> Pieces -> Moves
-getAllWhitePawnMoves piece allOtherPieces = map (\newPiece -> Move piece newPiece (replaceWhere newPiece (\piece -> piecePosition piece == piecePosition newPiece) allOtherPieces)) (regularMove ++ captureMove1 ++ captureMove2)
+getAllWhitePawnMoves piece allOtherPieces = map (\newPiece -> Move piece newPiece (newPiece : deleteWhere (checkValidCollision newPiece) allOtherPieces)) (regularMove ++ captureMove1 ++ captureMove2)
     where
         regularNewPiece = if (yPos $ piecePosition piece) == 6 then Piece Queen White (Vector (xPos $ piecePosition piece) 7) else changePiecePosition (Vector 0 1) piece
         captureNewPiece1 = changePiecePosition (Vector (-1) 1) piece
@@ -92,7 +92,7 @@ getAllWhitePawnMoves piece allOtherPieces = map (\newPiece -> Move piece newPiec
 
 -- Gets all the black pawn moves
 getAllBlackPawnMoves :: Piece -> Pieces -> Moves
-getAllBlackPawnMoves piece allOtherPieces = map (\newPiece -> Move piece newPiece (replaceWhere newPiece (\piece -> piecePosition piece == piecePosition newPiece) allOtherPieces)) (regularMove ++ captureMove1 ++ captureMove2)
+getAllBlackPawnMoves piece allOtherPieces = map (\newPiece -> Move piece newPiece (newPiece : deleteWhere (checkValidCollision newPiece) allOtherPieces)) (regularMove ++ captureMove1 ++ captureMove2)
     where
         regularNewPiece = if (yPos $ piecePosition piece) == 1 then Piece Queen Black (Vector (xPos $ piecePosition piece) 0) else changePiecePosition (Vector 0 (-1)) piece
         captureNewPiece1 = changePiecePosition (Vector (-1) (-1)) piece
