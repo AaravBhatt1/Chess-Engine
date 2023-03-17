@@ -19,8 +19,8 @@ generateMoveTree move
 getMoveEval :: Tree Move -> Float
 getMoveEval moveTree
         | null $ branches moveTree = getPositionEval $ newChessPos $ node moveTree
-        | (getMoveColor $ node moveTree) == White = minimum $ map getMoveEval $ branches moveTree
-        | (getMoveColor $ node moveTree) == Black = maximum $ map getMoveEval $ branches moveTree
+        | (getMoveColor $ node moveTree) == White = minimum $ map (\branch -> getMoveEval branch + 0.01) $ branches moveTree -- 0.01 is added so it favours the fastest checkmate
+        | (getMoveColor $ node moveTree) == Black = maximum $ map (\branch -> getMoveEval branch + 0.01) $ branches moveTree
 
 -- Gets the best move by looking through the move evaluations and fincing the best one
 getBestMove :: Tree Move -> Move
