@@ -56,12 +56,26 @@ getPieceValue piece = case pieceType piece of
 isOwnedBy :: Color -> Piece -> Bool
 isOwnedBy playerColor piece = playerColor == pieceColor piece
 
+changePieceType :: PieceType -> Piece -> Piece
+changePieceType newPieceType (Piece pieceType pieceColor piecePosition) = Piece newPieceType pieceColor piecePosition
+
+-- Carries out a movement, by returning the new piece after it has moved
+changePiecePosition :: Vector -> Piece -> Piece
+changePiecePosition vector (Piece pieceType pieceColor piecePosition) = Piece pieceType pieceColor (addPositionVector piecePosition vector)
+
 -- A move consists of a piece's old position, new position, the resultant position, and the color that carried out the move to help display a move
 data Move = Move {
     oldPiece :: Piece,
     newPiece :: Piece,
     newChessPos :: ChessPosition
 } deriving (Show, Eq)
+
+-- Deletes all the items where a function is true in a list
+deleteWhere :: (a -> Bool) -> [a] -> [a]
+deleteWhere func [] = []
+deleteWhere func (x : xn)
+    | func x = deleteWhere func xn
+    | otherwise = x : deleteWhere func xn
 
 -- Gets the color that carried out a move
 getMoveColor :: Move -> Color
