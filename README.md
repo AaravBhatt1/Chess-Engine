@@ -26,13 +26,13 @@ To then use the chess program, follow the instructions:
 2. Run the `Chess.exe` file using the instructions above
 3. When prompted to enter your move, move your piece on your chess board, then type your move in the format: `Move the pawn from e4 to e5`
 4. Then, when the AI describes its move, make the move it describes on your chess board
-5. Make sure to check the [Limitations](#Limitations) because this version of chess does not follow rules such as castling
+5. Make sure to check the [limitations](#limitations-and-bugs) because this version of chess does not follow rules such as castling
 
 ## How this chess program works
 
 This section is coming soon
 
-## <a name="Limitations">Limitations and Bugs</a>
+## Limitations and Bugs
 
 There are some limitations to this chess AI, these include:
 
@@ -44,4 +44,5 @@ There are some limitations to this chess AI, these include:
 There are currently no bugs that I know of.
 
 If you find a bug, please report it as an issue so I can add it to this section and possibly fix it.
+
 If you want to fix a bug, feel free to request a merge.
