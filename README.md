@@ -32,7 +32,7 @@ To then use the chess program, follow the instructions:
 
 This section is coming soon
 
-## <a name="Limitations, Bugs and Possible Features">Limitations</a>
+## <a name="Limitations">Limitations and Bugs</a>
 
 There are some limitations to this chess AI, these include:
 
@@ -40,3 +40,8 @@ There are some limitations to this chess AI, these include:
 - In order to win or lose, you need to capture the opponent's king with one of your pieces
 - All pawns auto-promote to a queen
 - The game currently doesn't detect draws
+
+There are currently no bugs that I know of.
+
+If you find a bug, please report it as an issue so I can add it to this section and possibly fix it.
+If you want to fix a bug, feel free to request a merge.
