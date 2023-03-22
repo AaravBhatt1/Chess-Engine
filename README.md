@@ -30,7 +30,16 @@ To then use the chess program, follow the instructions:
 
 ## How this chess program works
 
-This section is coming soon
+### Decomposition of the Problem
+
+This chess program is split into multiple parts:
+ - The rules of chess
+ - The AI that plays chess
+ - The user IO management
+ 
+### How I made the Rules of Chess in Haskell
+
+In order to make the rules of chess, first, I made the basic data types needed to represent a chess piece. Each piece has a color which is either black or white, a type such as a bishop; and a position on the board. I used vectors to represent the position of the piece on the board because vectors are easy to manipulate. This allowed me to represent a chess board as a list of chess pieces that would be on the board. 
 
 ## Limitations and Bugs
 
