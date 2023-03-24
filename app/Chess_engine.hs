@@ -55,11 +55,11 @@ getTotalPoints allPieces = totalWhitePoints - totalBlackPoints
 
 -- This returns true if at least 11 pieces are on the board, which is what I am counting as the opening
 isOpening :: Color -> ChessPosition -> Bool
-isOpening playerColor chessPosition = (length $ filter (isOwnedBy playerColor) chessPosition) > 13
+isOpening playerColor chessPosition = (length $ filter (isOwnedBy playerColor) chessPosition) > numPiecesForOpening
 
 -- This returns true if there is less than 6 pieces on the board
 isEndgame :: Color -> ChessPosition -> Bool
-isEndgame playerColor chessPosition = (length $ filter (isOwnedBy (getOtherColor playerColor)) chessPosition) < 6
+isEndgame playerColor chessPosition = (length $ filter (isOwnedBy (getOtherColor playerColor)) chessPosition) < numPiecesForEndgame
 
 -- This gets the distance of a piece from the middle of the board
 getDistanceFromMiddle :: Piece -> Float

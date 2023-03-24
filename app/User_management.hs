@@ -2,13 +2,14 @@ module User_management where
 
 import Chess_engine
 import Chess_rules
+import Constants
 import Types
 import Data.List
 import Data.Char
 
 -- This is the loop for each turn
-moveLoop :: ChessPosition -> IO ()
-moveLoop chessPosition = do
+moveLoop :: Int -> ChessPosition -> IO ()
+moveLoop engineDepth chessPosition = do
     userMove <- getUserMove White chessPosition
     let chessPos = newChessPos userMove
     if checkGameOver (chessPos)
@@ -16,7 +17,8 @@ moveLoop chessPosition = do
             putStrLn "You won, congragulations!"
             return ()
         else do
-            let moveTree = if (isEndgame Black chessPos && isEndgame White chessPos) then cutTree 6 $ generateMoveTree userMove else cutTree 4 $ generateMoveTree userMove
+            let adjustedEngineDepth = if (isEndgame Black chessPos && isEndgame White chessPos) then engineDepth + engineDepthEndgameIncrement else engineDepth
+            let moveTree = cutTree adjustedEngineDepth $ generateMoveTree userMove
             let engineMove = getBestMove moveTree
             putStrLn "Engine move: "
             putStrLn $ prettifyMove engineMove
@@ -24,7 +26,7 @@ moveLoop chessPosition = do
                 then do
                     putStrLn "You lost, better luck next time."
                     return ()
-                else moveLoop (newChessPos engineMove)
+                else moveLoop engineDepth (newChessPos engineMove)
     
 -- Checks if the user input is valid
 checkUserInput :: String -> Color -> ChessPosition -> Maybe Move

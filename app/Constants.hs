@@ -14,8 +14,25 @@ knightMove1 = Vector 2 1
 knightMove2 :: Vector
 knightMove2 = Vector 2 (-1)
 
-startingBoard :: ChessPosition
-startingBoard = [
+-- The amount the engine depth increases by during the endgame
+engineDepthEndgameIncrement :: Int
+engineDepthEndgameIncrement = 2
+
+-- This is the default engine depth
+defaultEngineDepth :: Int
+defaultEngineDepth = 4
+
+-- This is the number of pieces a player must have to be considered part of the opening
+numPiecesForOpening :: Int
+numPiecesForOpening = 13
+
+-- This is the number of pieces a player's opponent must have for the player to be considered part of the endgame
+numPiecesForEndgame :: Int
+numPiecesForEndgame = 6
+
+-- This is the starting chess board
+startingChessPosition :: ChessPosition
+startingChessPosition = [
     Piece Pawn White (Vector 0 1),
     Piece Pawn White (Vector 1 1),
     Piece Pawn White (Vector 2 1),

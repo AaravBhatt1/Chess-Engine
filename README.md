@@ -6,8 +6,9 @@ This project is a chess engine that I have built using haskell, so that I could 
 
 Features include:
 
-- Users can play chess using the app (however, some rules have been removed)
+- Users can play chess using the app
 - Users can play against the chess engine, which plays accurately
+- Users can choose the difficulty of the chess engine
 
 ## Demonstration
 
@@ -33,10 +34,11 @@ To then use the chess program, follow the instructions:
 ### Decomposition of the Problem
 
 This chess program is split into multiple parts:
- - The rules of chess
- - The AI that plays chess
- - The user IO management
- 
+
+- The rules of chess
+- The AI that plays chess
+- The user IO management
+
 ### How I made the Rules of Chess in Haskell
 
 In order to make the rules of chess, I first made the basic data types needed to represent a chess piece. Each piece has a color which is either black or white, a type such as a bishop or rook; and a position on the board. I used vectors to represent the position on the board because vectors are easy to manipulate. This allowed me to represent a chess board as a list of chess pieces that would be on the board. I created functions to check for collisions and whether a piece is on the board and then used these to find all the possible moves for each piece. I utilized patterns in the ways in which the pieces move, for example, bishops and rooks move in similiar ways.
@@ -44,6 +46,10 @@ In order to make the rules of chess, I first made the basic data types needed to
 ### How I made the AI
 
 To make the AI, I first created an evaluation function that judges which player is winning and by how much. This mainly used the number of points each player had, calculated using the number and types of pieces they own. But I additionally made the chess engine favour moving pieces closer to the centre of the board during the opening, and pushing pawns to the back rank and forcing the opponent's king to the corner at the endgame. Another important function for the AI was the function that created a tree of possible moves that could branch out from 1 move. Because haskell is lazy compiled, I made this an infinite tree which can be cut with a different function at a certain depth. This would then allow the user to choose the depth of the AI. From this tree of moves, we can then find the best move by working back from the deepest moves and finding the move that provides the best evaluation for each player at the end.
+
+### How I managed user input and output
+
+For this project, I broke down the input and output (IO) into different parts, such as inputting a move, but the most important part was the move loop which essentally acted as the game loop that inputted the user's move for a turn and then outputted the engine's move. Managing the user IO involved lots of recursion. For example, whenever text needed to be inputted, I had to create a recursive function that would ask them to input the text again until their input is valid. When the main function is called, the move loop is started after asking the user what difficulty they want to play against.
 
 ## Limitations and Bugs
 
